@@ -7,13 +7,58 @@ $admin_ip = "127.0.0.1";
 
 $socket = socket_create(AF_INET, SOCK_DGRAM, SOL_UDP);
 
+class Client
+{
+    public $alias;
+    public $ip;
+    public $port;
+    public function __construct($ip, $port)
+    {
+        $this->ip = $ip;
+        $this->port = $port;
+    }
+}
+
+$clients = array();
+
+function checkClient($c_ip)
+{
+    global $clients;
+    $ClientInList = false;
+    for ($i = 0; $i < sizeof($clients); $i++) {
+        if ($clients[$i]->ip == $c_ip) {
+            $ClientInList = true;
+        }
+    }
+
+    return $ClientInList;
+}
+
+function addClient(Client $client)
+{
+    global $clients;
+    $client->alias = "U" . sizeof($clients) + 1;
+    array_push($clients, $client);
+}
+
+function printClients()
+{
+    global $clients;
+    $response = "Clients connected: \n";
+    for ($i = 0; $i < sizeof($clients); $i++) {
+        $response = $response . $clients[$i]->alias . " (" . $clients[$i]->ip . ":" . $clients[$i]->port . ")\n";
+    }
+    return $response;
+}
+
 socket_bind($socket, $server_ip, $server_port);
 
 echo "Server listening on $server_ip:$server_port\n";
 while (true) {
     socket_recvfrom($socket, $data, 1024, 0, $client_ip, $client_port);
-
-    $pid = pcntl_fork();
+    if (!checkClient($client_ip)) {
+        addClient(new Client($client_ip, $client_port));
+    }
     echo "Received data from $client_ip:$client_port: $data\n";
 
 
@@ -37,27 +82,24 @@ function processRequest($request, $client_ip)
             }
         } else if ($request == "/help") {
             $response = "Available commands are:\n/files\n/disconnect";
-        }else if($request=="/disconnect") {
+        } else if ($request == "/disconnect") {
             $response = "Good bye!";
-        }else if($request == "/clients"){
+        } else if ($request == "/clients") {
             $response = printClients();
-        }else if(substr($request, 0, 5) == "/exec"){
-            $file = substr($request,6);
-            $fileDirectory = __DIR__."/".$file;
+        } else if (substr($request, 0, 5) == "/exec") {
+            $file = substr($request, 6);
+            $fileDirectory = __DIR__ . "/" . $file;
             if (file_exists($fileDirectory)) {
-                exec ($file, $output,$returnCode);
-                if($returnCode === 0){
+                exec($file, $output, $returnCode);
+                if ($returnCode === 0) {
                     $response = "The file has been successfully executed!";
-                }else {
+                } else {
                     $reponse = "There was an error while executing the file! Please try again.";
                 }
-            }else{
-                 $response = "The specified file does not exist!";
+            } else {
+                $response = "The specified file does not exist!";
             }
-            
-            
-        }
-         else {
+        } else {
             $response = "Invalid command!";
         }
     } else {
@@ -68,4 +110,3 @@ function processRequest($request, $client_ip)
 }
 
 socket_close($socket);
-?>
