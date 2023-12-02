@@ -6,7 +6,10 @@
 
         if ($_SERVER["REQUEST_METHOD"] == "POST" ) {
             $socket = socket_create(AF_INET, SOCK_DGRAM, SOL_UDP);
-
+            if($socket===false){
+                echo "Something went wrong, please try again!";
+                exit;
+            }
             $message = explode("|",$_POST['mesazhi'])[0];
             $creatingFile = explode("|",$_POST['mesazhi'])[1];
 
