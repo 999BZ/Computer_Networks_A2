@@ -57,13 +57,8 @@ function processRequest($request, $client_ip)
                
                 break;
             case "/files":
-                if ($client_ip == $admin_ip) {
                     $files = is_dir(__DIR__."/files") ? scandir(__DIR__."/files") : [];
                     $response = "Files on server: " . ($files ? implode(", ", $files) : "Directory empty or not found");
-
-                } else {
-                    $response = "You don't have permission for this command!";
-                }
                 break;
             case "/clients":
                 $response = printClients();
